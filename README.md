@@ -1,108 +1,118 @@
-# Network-Sniffer
-A simple yet powerful Python Network Sniffer built during my Cyber Security Internship at CodeAlpha. This tool captures, analyzes, and displays real-time network packets — similar to tcpdump or Wireshark (but lightweight and fully written in Python ).
+Network Sniffer
+
+A simple, educational Python network sniffer built during my Cyber Security Internship at CodeAlpha.
+This tool captures live network traffic, parses common protocol fields, and prints concise, human-friendly summaries (with hex + ASCII payload previews). It can also save captures to a PCAP file for later analysis in Wireshark.
+
 Features
 
- Capture live network packets in real-time
+Capture live packets from a chosen network interface
 
- Display source/destination IPs, ports, and protocols
+Display timestamp, protocol, source/destination IPs and ports, and payload length
 
- Show readable payload data (both Hex and ASCII view)
+Show a short hex dump and ASCII preview (first 64 bytes) of packet payloads
 
- Apply custom filters (TCP, UDP, ICMP, specific ports, etc.)
+Apply BPF filters (e.g., tcp and port 80) to limit what you capture
 
- Save captured traffic to .pcap files (viewable in Wireshark)
+Optionally save captured packets to a .pcap file (openable in Wireshark)
 
- Fully configurable through command-line arguments
+Lightweight, single-file script suitable for learning and demoing packet analysis
 
 Requirements
 
-Python 3
+Python 3 
 
-Required libraries:
+scapy library
 
-pip install scapy argparse
+Optional (for extended features):
 
-On Linux, you might need sudo/root privileges to capture packets:
+pyshark + tshark — for richer protocol dissection
+
+rich — for colored terminal output
+
+Installation
+
+Create and activate a virtual environment (recommended):
+
+python -m venv venv
+# Linux 
+source venv/bin/activate
+
+Install dependencies:
+
+pip install scapy
+# optional extras
+# pip install pyshark rich
+
+Usage
+
+Save the provided script as sniffer.py. Run it with appropriate privileges (sniffing usually requires root/administrator):
+
+Basic (default interface, unlimited):
 
 sudo python sniffer.py
 
- Usage
- 1.Basic Capture
- 
-   $ python sniffer.py
 
-Starts sniffing on the default interface until you stop with Ctrl+C.
+Capture N packets:
+
+sudo python sniffer.py --count 100
 
 
-2. Capture on a Specific Interface
- 
-   $ python sniffer.py --iface wlan0
+Specify interface:
 
-Sniffs packets on the Wi-Fi interface.
-
-3. Limit the Number of Packets
-
-    $ python sniffer.py --count 10
-
-Captures only 10 packets and then exits.
+sudo python sniffer.py --iface wlan0
 
 
-5. Apply a Filter
- 
-   $ python sniffer.py --filter "tcp and port 80"
+Use a BPF filter:
 
-Only capture HTTP (TCP port 80) packets.
-
-6. Save Packets to a File
-
-    $ python sniffer.py --save capture.pcap
-
-Saves all captured packets to capture.pcap, which you can open in Wireshark.
+sudo python sniffer.py --filter "tcp and port 80"
 
 
- Example Output
+Save captures to PCAP:
 
-Starting sniffing... (press Ctrl+C to stop)
+sudo python sniffer.py --save capture.pcap
 
+
+You can combine options:
+
+sudo python sniffer.py --iface eth0 --count 500 --filter "udp" --save dns_capture.pcap
+
+Command-line Options
+
+--iface : Interface to sniff (e.g., eth0, wlan0). If omitted, Scapy chooses a default.
+
+--count : Number of packets to capture (0 or omitted = unlimited).
+
+--filter : BPF (libpcap) filter string (e.g., "tcp and port 443").
+
+--save : File path to write captured packets in .pcap format.
+
+Example Output
 [2025-11-01 10:32:44.321] TCP   192.168.1.10:443 -> 192.168.1.5:52344 | payload=128 bytes
- 
     payload(hexdump): 474554202f20485454502f312e310d0a486f73743a20676f6f676c652e636f6d0d0a0d0a
-  
     payload(ascii) : GET / HTTP/1.1..Host: google.com....
 
-[2025-11-01 10:32:45.101] UDP   192.168.1.5:57632 -> 8.8.8.8:53 | payload=64 bytes
- 
-    payload(hexdump): 1a2b0100000100000000000004676f6f676c6503636f6d0000010001
-  
-    payload(ascii) : .......google.com.....
+How it works (brief)
 
-Stopped by user
+Uses Scapy's sniff() to capture packets on an interface.
 
-Saving 23 packets to capture.pcap
+For each packet, a callback inspects layers (IP/IPv6, TCP, UDP, ICMP, Raw, DNS, etc.).
 
-How It Works
+Extracts fields (src/dst, ports, protocol), obtains payload bytes (if any), and prints a timestamped one-line summary plus a short hex/ASCII preview.
 
-Uses Scapy to sniff packets on a chosen interface
+Optionally stores captured packets in memory and writes them to a PCAP using wrpcap().
 
-Extracts protocol, IPs, ports, and payload data
+Development & Extension Ideas
 
-Displays a formatted summary per packet
+Add session reassembly (reconstruct TCP streams to view full HTTP requests/responses)
 
-Optionally stores packets in memory
+Export CSV/JSON summaries (top talkers, protocol counts)
 
-Saves them as .pcap for Wireshark analysis
+Integrate pyshark for deeper protocol parsing (TLS SNI, HTTP headers)
 
- Command-Line Options
+Add multi-threaded processing to handle high-throughput captures
 
-Argument	Description	Example
+Add colored or tabular terminal output (use rich or prettytable)
 
---iface	Network interface to capture from	--iface wlan0
-
---count	Number of packets to capture (0 = unlimited)	--count 100
-
---filter	BPF-style capture filter	--filter "tcp and port 443"
-
---save	Save captured packets to .pcap file	--save output.pcap
  
  
   Disclaimer
